@@ -1,0 +1,47 @@
+import requests
+import google.generativeai as genai
+from datetime import datetime
+
+# 1. API 설정
+GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+class CluudeEngine:
+    def __init__(self, btc_holdings):
+        self.btc_holdings = btc_holdings # 현재 보유 중인 0.6634 BTC
+        
+    def get_realtime_market(self):
+        """[인베스팅닷컴 기능] 실시간 시세 수집"""
+        # 업비트 API 예시 (비트코인)
+        btc_url = "https://api.upbit.com/v1/ticker?markets=KRW-BTC"
+        price = requests.get(btc_url).json()[0]['trade_price']
+        return price
+
+    def fetch_and_summarize(self, category):
+        """[위스퍼 기능] AI 뉴스 요약 및 인사이트 추출"""
+        # 실제로는 News API나 RSS를 통해 뉴스를 긁어옵니다.
+        raw_news = f"{category} 관련 최신 이슈들..." 
+        
+        prompt = f"""
+        당신은 금융 분석 AI '클루드'입니다. 
+        {category} 뉴스를 분석하여 '위스퍼' 스타일로 핵심만 요약하고, 
+        자산가 관점에서 '인베스팅닷컴'보다 날카로운 인사이트를 한 줄 적어주세요.
+        내용: {raw_news}
+        """
+        response = model.generate_content(prompt)
+        return response.text
+
+    def get_portfolio_status(self):
+        """[더리치 기능] 자산 현황 및 목표 달성률 계산"""
+        current_price = self.get_realtime_market()
+        total_value = self.btc_holdings * current_price
+        goal_percent = (self.btc_holdings / 1.0) * 100 # 1BTC 목표
+        return {
+            "value": f"{total_value:,.0f}원",
+            "progress": f"{goal_percent:.2f}%"
+        }
+
+# 실행
+engine = CluudeEngine(0.6634)
+print(f"현재 자산 가치: {engine.get_portfolio_status()['value']}")
